@@ -6,9 +6,9 @@
 from collections import defaultdict, deque
 from typing import Union
 
-from ._dataclass import Media, Track
+from ._dataclass import Media
 
-MediaItem = Union[Media, Track]
+MediaItem = Media
 
 
 class Queue:
@@ -39,9 +39,7 @@ class Queue:
         self.remove_current(chat_id)
         self.queues[chat_id].appendleft(item)
         if remove:
-            self.queues[chat_id].rotate(-remove)
-            self.queues[chat_id].popleft()
-            self.queues[chat_id].rotate(remove)
+            del self.queues[chat_id][remove]
 
     def get_current(self, chat_id: int) -> MediaItem | None:
         """Return the currently playing item (first in queue), if any."""

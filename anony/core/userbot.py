@@ -8,7 +8,7 @@ from pyrogram import Client
 from anony import config, logger
 
 
-class Userbot(Client):
+class Userbot:
     def __init__(self):
         """
         Initializes the userbot with multiple clients.

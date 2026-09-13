@@ -6,6 +6,7 @@
 import time
 import asyncio
 import logging
+from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
 logging.basicConfig(
@@ -37,8 +38,8 @@ boot = time.time()
 from anony.core.bot import Bot
 app = Bot()
 
-from anony.core.dir import ensure_dirs
-ensure_dirs()
+for d in ["cache", "downloads"]:
+    Path(d).mkdir(parents=True, exist_ok=True)
 
 from anony.core.userbot import Userbot
 userbot = Userbot()

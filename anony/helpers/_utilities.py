@@ -3,7 +3,9 @@
 # This file is part of AnonXMusic
 
 
+import os
 import re
+import shutil
 
 from pyrogram import enums, types
 
@@ -13,6 +15,69 @@ from anony import app
 class Utilities:
     def __init__(self):
         pass
+
+    def get_sys_info(self) -> dict:
+        disk = shutil.disk_usage("/")
+        disk_used_gb = f"{disk.used / (1024**3):.2f}"
+        disk_total_gb = f"{disk.total / (1024**3):.2f}"
+        disk_percent = round((disk.used / disk.total) * 100, 1)
+
+        cpu_count = os.cpu_count() or 1
+        cpu_percent = 0.0
+        if hasattr(os, "getloadavg"):
+            try:
+                cpu_percent = round((os.getloadavg()[0] / cpu_count) * 100, 1)
+            except Exception:
+                pass
+
+        mem_total_gb = 0
+        mem_percent = 0.0
+        mem_rss_mb = "0.00"
+
+        if os.path.exists("/proc/meminfo"):
+            try:
+                mem = {}
+                with open("/proc/meminfo") as f:
+                    for line in f:
+                        parts = line.split(":")
+                        if len(parts) == 2:
+                            mem[parts[0].strip()] = int(parts[1].split()[0])
+                total = mem.get("MemTotal", 0)
+                avail = mem.get("MemAvailable", mem.get("MemFree", 0))
+                if total:
+                    mem_total_gb = round(total / (1024**2))
+                    mem_percent = round(((total - avail) / total) * 100, 1)
+            except Exception:
+                pass
+
+        if os.path.exists("/proc/self/status"):
+            try:
+                with open("/proc/self/status") as f:
+                    for line in f:
+                        if line.startswith("VmRSS:"):
+                            rss_kb = int(line.split()[1])
+                            mem_rss_mb = f"{rss_kb / 1024:.2f}"
+                            break
+            except Exception:
+                pass
+        elif hasattr(os, "sysconf"):
+            try:
+                pages = os.sysconf("SC_PHYS_PAGES")
+                page_size = os.sysconf("SC_PAGE_SIZE")
+                mem_total_gb = round((pages * page_size) / (1024**3))
+            except Exception:
+                pass
+
+        return {
+            "cpu_count": cpu_count,
+            "cpu_percent": cpu_percent,
+            "disk_percent": disk_percent,
+            "disk_used_gb": disk_used_gb,
+            "disk_total_gb": disk_total_gb,
+            "mem_percent": mem_percent,
+            "mem_total_gb": mem_total_gb,
+            "mem_rss_mb": mem_rss_mb,
+        }
 
     def format_eta(self, seconds: int) -> str:
         if seconds < 60:
