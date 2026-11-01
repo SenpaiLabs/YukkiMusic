@@ -108,7 +108,7 @@ func sendStartResponse(m *tg.NewMessage, caption string) error {
 	if err == nil {
 		return nil
 	}
-	if sendOpt.Media == "" {
+	if sendOpt.Media == nil || sendOpt.Media == "" {
 		gologging.ErrorF("[start] text send failed: %v", err)
 		return err
 	}

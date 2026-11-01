@@ -86,10 +86,10 @@ func sptHandle(m *telegram.NewMessage) error {
 	server.UploadTest()
 
 	output := F(chatID, "spt_result", locales.Arg{
-		"ip":          user.IP,
+		"ip":          "Hidden",
 		"isp":         user.Isp,
-		"lat":         user.Lat,
-		"lon":         user.Lon,
+		"lat":         "Hidden",
+		"lon":         "Hidden",
 		"server_name": server.Name,
 		"country":     server.Country,
 		"sponsor":     server.Sponsor,

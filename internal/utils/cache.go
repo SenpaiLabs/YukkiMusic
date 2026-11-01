@@ -40,10 +40,30 @@ type Cache[K comparable, V any] struct {
 }
 
 func NewCache[K comparable, V any](defaultTTL time.Duration) *Cache[K, V] {
-	return &Cache[K, V]{
+	c := &Cache[K, V]{
 		items:      make(map[K]CacheItem[V]),
 		defaultTTL: defaultTTL,
 	}
+	if defaultTTL > 0 {
+		go func() {
+			interval := defaultTTL / 2
+			if interval < time.Minute {
+				interval = time.Minute
+			}
+			ticker := time.NewTicker(interval)
+			for range ticker.C {
+				c.mu.Lock()
+				now := time.Now()
+				for k, item := range c.items {
+					if !item.Expiration.IsZero() && now.After(item.Expiration) {
+						delete(c.items, k)
+					}
+				}
+				c.mu.Unlock()
+			}
+		}()
+	}
+	return c
 }
 
 func (c *Cache[K, V]) Set(key K, value V) {

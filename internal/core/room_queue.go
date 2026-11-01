@@ -31,8 +31,6 @@ func (r *RoomState) NextTrack() *state.Track {
 	}
 
 	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	if r.track != nil && r.loop > 0 {
 		r.position = 0
 		r.playing = false
@@ -40,12 +38,19 @@ func (r *RoomState) NextTrack() *state.Track {
 		r.muted = false
 		r.loop--
 		r.updatedAt = time.Now().Unix()
-		return r.track
+		track := r.track
+		r.mu.Unlock()
+		return track
 	}
 
-	r.releaseFile()
+	prevTrack := r.track
 
 	if len(r.queue) == 0 {
+		r.track = nil
+		r.mu.Unlock()
+		if prevTrack != nil {
+			releaseTrackFile(prevTrack, r.ID)
+		}
 		return nil
 	}
 
@@ -63,6 +68,11 @@ func (r *RoomState) NextTrack() *state.Track {
 	r.paused = false
 	r.muted = false
 	r.updatedAt = time.Now().Unix()
+	r.mu.Unlock()
+
+	if prevTrack != nil {
+		releaseTrackFile(prevTrack, r.ID)
+	}
 
 	return next
 }

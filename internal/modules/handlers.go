@@ -39,7 +39,11 @@ type CbHandlerDef struct {
 }
 
 var handlers = []MsgHandlerDef{
-	{Pattern: "json", Handler: jsonHandle},
+	{
+		Pattern: "json",
+		Handler: jsonHandle,
+		Filters: []telegram.Filter{sudoOnlyFilter},
+	},
 	{
 		Pattern: "eval",
 		Handler: evalHandle,

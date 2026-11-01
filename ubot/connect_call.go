@@ -15,7 +15,7 @@ func (ctx *Context) connectCall(
 	jsonParams string,
 ) error {
 	ctx.waitConnectMutex.Lock()
-	waitChan := make(chan error)
+	waitChan := make(chan error, 1)
 	ctx.waitConnect[chatId] = waitChan
 	ctx.waitConnectMutex.Unlock()
 

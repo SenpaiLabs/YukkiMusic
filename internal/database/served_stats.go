@@ -22,7 +22,11 @@ func ServedChats() ([]int64, error) {
 	if err != nil {
 		return nil, err
 	}
-	return state.Served.Chats, nil
+	state.mu.RLock()
+	defer state.mu.RUnlock()
+	chats := make([]int64, len(state.Served.Chats))
+	copy(chats, state.Served.Chats)
+	return chats, nil
 }
 
 func ServedUsers() ([]int64, error) {
@@ -30,7 +34,11 @@ func ServedUsers() ([]int64, error) {
 	if err != nil {
 		return nil, err
 	}
-	return state.Served.Users, nil
+	state.mu.RLock()
+	defer state.mu.RUnlock()
+	users := make([]int64, len(state.Served.Users))
+	copy(users, state.Served.Users)
+	return users, nil
 }
 
 func IsServedChat(id int64) (bool, error) {
@@ -38,7 +46,9 @@ func IsServedChat(id int64) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	state.mu.RLock()
 	_, ok := state.servedChatsMap[id]
+	state.mu.RUnlock()
 	return ok, nil
 }
 
@@ -47,7 +57,9 @@ func IsServedUser(id int64) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	state.mu.RLock()
 	_, ok := state.servedUsersMap[id]
+	state.mu.RUnlock()
 	return ok, nil
 }
 

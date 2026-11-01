@@ -95,10 +95,11 @@ func (s *CleanScheduler) schedule(chatID int64, messageID int32) {
 	if messageID == 0 {
 		return
 	}
+	delay := cleanModeDelay(chatID)
 	s.mu.Lock()
 	s.pending[chatID] = append(s.pending[chatID], cleanEntry{
 		messageID: messageID,
-		dueAt:     time.Now().Add(cleanModeDelay(chatID)),
+		dueAt:     time.Now().Add(delay),
 	})
 	s.mu.Unlock()
 }

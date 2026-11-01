@@ -108,12 +108,11 @@ func handleReload(m *telegram.NewMessage, cplay bool) error {
 	summary += reloadVoiceChatStatus(chatID, snapshot, snapErr)
 	summary += reloadAssistantStatus(chatID, snapshot, snapErr)
 
-	if isAdmin {
+	if isAdmin && (!snapshot.VoiceChatActive || !r.IsActiveChat()) {
 		if core.DeleteRoom(roomID) {
 			summary += F(chatID, "reload_room_reset") + "\n"
 		}
 	}
-
 	utils.EOR(statusMsg, F(chatID, "reload_done", locales.Arg{
 		"summary": summary,
 	}))

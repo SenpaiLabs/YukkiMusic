@@ -19,6 +19,8 @@ package database
 
 import (
 	"fmt"
+	"slices"
+	"sync"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -35,13 +37,14 @@ type Maintenance struct {
 }
 
 type BotState struct {
-	ID            string      `bson:"_id"`
-	Served        UsersChats  `bson:"served"`
-	Sudoers       []int64     `bson:"sudoers"`
-	Blacklisted   UsersChats  `bson:"blacklisted"`
-	AutoLeave     bool        `bson:"autoleave"`
-	LoggerEnabled bool        `bson:"logger"`
-	Maintenance   Maintenance `bson:"maint,omitempty"`
+	mu            sync.RWMutex `bson:"-"`
+	ID            string       `bson:"_id"`
+	Served        UsersChats   `bson:"served"`
+	Sudoers       []int64      `bson:"sudoers"`
+	Blacklisted   UsersChats   `bson:"blacklisted"`
+	AutoLeave     bool         `bson:"autoleave"`
+	LoggerEnabled bool         `bson:"logger"`
+	Maintenance   Maintenance  `bson:"maint,omitempty"`
 
 	// runtime indexes for fast lookup
 	servedUsersMap map[int64]struct{} `bson:"-"`
@@ -97,6 +100,8 @@ func getBotState() (*BotState, error) {
 	return &state, nil
 }
 
+var stateModifyMu sync.Mutex
+
 func updateBotState(newState *BotState) error {
 	ctx, cancel := ctx()
 	defer cancel()
@@ -111,24 +116,40 @@ func updateBotState(newState *BotState) error {
 		return fmt.Errorf("failed to update bot state: %w", err)
 	}
 
-	dbCache.Set(botStateCacheKey, newState)
 	return nil
 }
 
 func modifyBotState(fn func(*BotState) bool) error {
+	stateModifyMu.Lock()
+	defer stateModifyMu.Unlock()
+
 	state, err := getBotState()
 	if err != nil {
 		return err
 	}
 
-	if fn(state) {
-		return updateBotState(state)
+	state.mu.Lock()
+	changed := fn(state)
+	if !changed {
+		state.mu.Unlock()
+		return nil
 	}
 
-	return nil
+	snapshot := *state
+	snapshot.Served.Users = slices.Clone(state.Served.Users)
+	snapshot.Served.Chats = slices.Clone(state.Served.Chats)
+	snapshot.Sudoers = slices.Clone(state.Sudoers)
+	snapshot.Blacklisted.Users = slices.Clone(state.Blacklisted.Users)
+	snapshot.Blacklisted.Chats = slices.Clone(state.Blacklisted.Chats)
+	state.mu.Unlock()
+
+	return updateBotState(&snapshot)
 }
 
 func buildIndexes(s *BotState) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.servedUsersMap = make(map[int64]struct{}, len(s.Served.Users))
 	for _, u := range s.Served.Users {
 		s.servedUsersMap[u] = struct{}{}

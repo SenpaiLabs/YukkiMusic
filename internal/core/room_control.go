@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Laky-64/gologging"
@@ -486,7 +487,7 @@ func getMediaDescription(
 	if pos > 0 {
 		baseCmd += "-ss " + strconv.Itoa(pos) + " "
 	}
-	baseCmd += "-v warning -i \"" + url + "\" "
+	baseCmd += "-v warning -i '" + strings.ReplaceAll(url, "'", "'\\''") + "' "
 
 	audio := getAudioPipeline(baseCmd, speed)
 	if !isVideo {

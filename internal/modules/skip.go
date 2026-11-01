@@ -95,8 +95,7 @@ func handleSkip(m *telegram.NewMessage, cplay bool) error {
 			return telegram.ErrEndGroup
 		}
 
-		// /skip N means: skip current + N queued tracks.
-		skipCount = parsed + 1
+		skipCount = parsed
 	}
 
 	if len(r.Queue()) == 0 {

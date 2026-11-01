@@ -22,7 +22,11 @@ func Sudoers() ([]int64, error) {
 	if err != nil {
 		return nil, err
 	}
-	return state.Sudoers, nil
+	state.mu.RLock()
+	defer state.mu.RUnlock()
+	sudoers := make([]int64, len(state.Sudoers))
+	copy(sudoers, state.Sudoers)
+	return sudoers, nil
 }
 
 func IsSudo(id int64) (bool, error) {
@@ -30,6 +34,8 @@ func IsSudo(id int64) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	state.mu.RLock()
+	defer state.mu.RUnlock()
 	return contains(state.Sudoers, id), nil
 }
 

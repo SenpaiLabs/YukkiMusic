@@ -19,6 +19,7 @@ package modules
 
 import (
 	"log"
+	"slices"
 
 	"github.com/Laky-64/gologging"
 	"github.com/amarnathcjd/gogram/telegram"
@@ -157,15 +158,16 @@ func setBotCommands(bot *telegram.Client) {
 		{&telegram.BotCommandScopeChats{}, AllCommands.GroupUserCommands},
 		{
 			&telegram.BotCommandScopeChatAdmins{},
-			append(AllCommands.GroupUserCommands, AllCommands.GroupAdminCommands...),
+			slices.Concat(AllCommands.GroupUserCommands, AllCommands.GroupAdminCommands),
 		},
 		{
 			&telegram.BotCommandScopePeer{
 				Peer: &telegram.InputPeerUser{UserID: config.OwnerID},
 			},
-			append(
-				append(AllCommands.PrivateUserCommands, AllCommands.PrivateSudoCommands...),
-				AllCommands.PrivateOwnerCommands...,
+			slices.Concat(
+				AllCommands.PrivateUserCommands,
+				AllCommands.PrivateSudoCommands,
+				AllCommands.PrivateOwnerCommands,
 			),
 		},
 	}
@@ -183,7 +185,7 @@ func setBotCommands(bot *telegram.Client) {
 		return
 	}
 
-	sudoCmds := append(AllCommands.PrivateUserCommands, AllCommands.PrivateSudoCommands...)
+	sudoCmds := slices.Concat(AllCommands.PrivateUserCommands, AllCommands.PrivateSudoCommands)
 	for _, id := range sudoers {
 		peer := &telegram.BotCommandScopePeer{
 			Peer: &telegram.InputPeerUser{UserID: id},

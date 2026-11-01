@@ -19,6 +19,7 @@ package modules
 
 import (
 	"fmt"
+	"html"
 	"time"
 
 	"github.com/amarnathcjd/gogram/telegram"
@@ -77,7 +78,7 @@ func bugHandler(m *telegram.NewMessage) error {
 	userMention := utils.MentionHTML(m.Sender)
 	chatTitle := "Private Chat"
 	if m.Channel != nil {
-		chatTitle = m.Channel.Title
+		chatTitle = html.EscapeString(m.Channel.Title)
 	}
 	chatMention := fmt.Sprintf("<a href=\"%s\">%s</a>", m.Link(), chatTitle)
 
@@ -86,7 +87,7 @@ func bugHandler(m *telegram.NewMessage) error {
 		"user_id": m.Sender.ID,
 		"chat":    chatMention,
 		"chat_id": m.ChannelID(),
-		"report":  reason,
+		"report":  html.EscapeString(reason),
 	})
 
 	// Send report to dev channels

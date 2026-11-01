@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Laky-64/gologging"
@@ -41,7 +42,7 @@ import (
 	"main/internal/utils"
 )
 
-var downloadCancels = make(map[int64]func())
+var downloadCancels sync.Map
 
 func getEffectiveRoom(m *tg.NewMessage, cplay bool) (*core.RoomState, error) {
 	chatID := m.ChannelID()

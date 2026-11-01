@@ -446,13 +446,19 @@ func (ctx *Context) handleUpdates() {
 			ctx.waitConnectMutex.RUnlock()
 
 			if waitChan != nil {
+				var err error
 				switch state.State {
 				case ntgcalls.Connected:
-					waitChan <- nil
+					err = nil
 				case ntgcalls.Closed, ntgcalls.Failed:
-					waitChan <- ErrConnectionFailed
+					err = ErrConnectionFailed
 				case ntgcalls.Timeout:
-					waitChan <- ErrConnectionTimeout
+					err = ErrConnectionTimeout
+				default:
+					return
+				}
+				select {
+				case waitChan <- err:
 				default:
 				}
 			}

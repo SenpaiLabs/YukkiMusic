@@ -508,12 +508,10 @@ func downloadFirstTrack(
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	downloadCancels[chatID] = cancel
+	downloadCancels.Store(chatID, cancel)
 	defer func() {
-		if _, ok := downloadCancels[chatID]; ok {
-			delete(downloadCancels, chatID)
-			cancel()
-		}
+		downloadCancels.Delete(chatID)
+		cancel()
 	}()
 
 	path, err := safeDownload(ctx, track, replyMsg, chatID)

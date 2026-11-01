@@ -392,10 +392,14 @@ func performEval(
 		}
 
 		strDou := strings.Split(stdOut.String(), "output-start")
+		outText := stdOut.String()
+		if len(strDou) > 1 {
+			outText = strDou[1]
+		}
 
 		return fmt.Sprintf(
 			"<b>#EVALOut:</b> <code>%s</code>",
-			strings.TrimSpace(strDou[1]),
+			strings.TrimSpace(outText),
 		), false
 	}
 
@@ -477,6 +481,7 @@ func jsonHandle(m *telegram.NewMessage) error {
 			m.Reply("Error: " + err.Error())
 			return nil
 		}
+		defer tmpFile.Close()
 
 		_, err = tmpFile.Write(jsonString)
 		if err != nil {

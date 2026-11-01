@@ -43,7 +43,7 @@ func (ctx *Context) joinPresentation(chatId int64, join bool) error {
 		}
 
 		ctx.waitConnectMutex.Lock()
-		waitChan := make(chan error)
+		waitChan := make(chan error, 1)
 		ctx.waitConnect[chatId] = waitChan
 		ctx.waitConnectMutex.Unlock()
 

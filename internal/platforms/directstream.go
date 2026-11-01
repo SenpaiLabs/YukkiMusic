@@ -89,6 +89,11 @@ func (d *DirectStreamPlatform) Name() state.PlatformName {
 
 func (d *DirectStreamPlatform) CanGetTracks(query string) bool {
 	query = strings.TrimSpace(query)
+	safeURL, err := sanitizeMediaURL(query)
+	if err != nil {
+		return false
+	}
+	query = safeURL
 
 	// Must be a valid URL
 	parsedURL, err := url.Parse(query)
@@ -109,6 +114,11 @@ func (d *DirectStreamPlatform) GetTracks(
 	video bool,
 ) ([]*state.Track, error) {
 	query = strings.TrimSpace(query)
+	safeURL, err := sanitizeMediaURL(query)
+	if err != nil {
+		return nil, errUnsafeURL
+	}
+	query = safeURL
 
 	info, err := d.validateStream(query)
 	if err != nil {
@@ -137,13 +147,15 @@ func (d *DirectStreamPlatform) Download(
 	track *state.Track,
 	statusMsg *telegram.NewMessage,
 ) (string, error) {
-	// For direct streams, we don't download - just return the URL
-	// The streaming system will handle it directly
+	safeURL, err := sanitizeMediaURL(track.URL)
+	if err != nil {
+		return "", errUnsafeURL
+	}
 	gologging.InfoF(
 		"DirectStream: Returning URL for direct streaming: %s",
-		track.URL,
+		safeURL,
 	)
-	return track.URL, nil
+	return safeURL, nil
 }
 
 func (d *DirectStreamPlatform) CanDownload(

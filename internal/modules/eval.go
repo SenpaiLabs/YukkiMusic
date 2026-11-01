@@ -26,6 +26,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/Laky-64/gologging"
 	"github.com/amarnathcjd/gogram/telegram"
@@ -101,7 +102,8 @@ Examples:
 	if err := i.Use(symbols); err != nil {
 		gologging.ErrorF("failed to use custom symbols: %v", err)
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
 
 	// Wrap snippet mode
 	if !strings.Contains(code, "package ") && !strings.Contains(code, "func ") {
@@ -171,11 +173,15 @@ func main() {
 	}
 
 	if len(output) > 4095 {
-		file, _ := os.Create("output.txt")
+		file, err := os.CreateTemp("", "eval_output_*.txt")
+		if err != nil {
+			m.Reply("Error creating output file: " + err.Error())
+			return nil
+		}
+		defer os.Remove(file.Name())
 		defer file.Close()
 		io.WriteString(file, output)
 		m.ReplyMedia(file.Name(), &telegram.MediaOptions{Caption: "Output"})
-		os.Remove(file.Name())
 		return nil
 	}
 

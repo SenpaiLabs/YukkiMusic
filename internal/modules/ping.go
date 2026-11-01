@@ -110,7 +110,7 @@ func pingHandler(m *tg.NewMessage) error {
 		ramInfo = fmt.Sprintf("%.2f / %.2f GB", usedGB, totalGB)
 	}
 
-	if percentages, err := cpu.Percent(time.Second, false); err == nil &&
+	if percentages, err := cpu.Percent(0, false); err == nil &&
 		len(percentages) > 0 {
 		cpuUsage = fmt.Sprintf("%.2f%%", percentages[0])
 	}
@@ -130,18 +130,8 @@ func pingHandler(m *tg.NewMessage) error {
 		"disk_usage": diskUsage,
 	})
 
-	_, err = reply.Edit(msg, opt)
-	if err != nil {
-		gologging.ErrorF("[ping] edit failed: %v", err)
-
-		if config.PingImage != "" {
-			opt.Media = nil
-			_, err = reply.Edit(msg, opt)
-			if err != nil {
-				gologging.ErrorF("[ping] fallback text edit failed: %v", err)
-				return err
-			}
-		}
+	if _, err := utils.EOR(reply, msg, opt); err != nil {
+		return err
 	}
 	return tg.ErrEndGroup
 }

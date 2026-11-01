@@ -27,17 +27,22 @@ import (
 )
 
 // check if a track is used in any room (other than the given room)
-func isTrackUsed(trackID string, skipChatID int64) bool {
+func isTrackUsed(trackID string, skipRoomID int64) bool {
 	for _, room := range rooms {
-		if room == nil || room.track == nil || room.ChatID == skipChatID {
+		if room == nil || room.ID == skipRoomID {
 			continue
 		}
 
-		if room.track.ID == trackID {
+		room.mu.RLock()
+		track := room.track
+		inQueue := isTrackInQueue(trackID, room.queue)
+		room.mu.RUnlock()
+
+		if track != nil && track.ID == trackID {
 			return true
 		}
 
-		if isTrackInQueue(trackID, room.queue) {
+		if inQueue {
 			return true
 		}
 	}
@@ -59,16 +64,14 @@ func isTrackInQueue(trackID string, queue []*state.Track) bool {
 	return false
 }
 
-// release current track file if unused elsewhere
-func (r *RoomState) releaseFile() {
-	if r == nil || r.track == nil {
+// releaseTrackFile removes a track's file if unused in other rooms
+func releaseTrackFile(track *state.Track, skipRoomID int64) {
+	if track == nil {
 		return
 	}
 
-	track := r.track
-
 	roomsMu.RLock()
-	used := isTrackUsed(track.ID, r.ID)
+	used := isTrackUsed(track.ID, skipRoomID)
 	roomsMu.RUnlock()
 
 	if used {
@@ -81,6 +84,19 @@ func (r *RoomState) releaseFile() {
 	}
 
 	findAndRemove(track)
+}
+
+// release current track file if unused elsewhere
+func (r *RoomState) releaseFile() {
+	if r == nil {
+		return
+	}
+
+	r.mu.RLock()
+	track := r.track
+	r.mu.RUnlock()
+
+	releaseTrackFile(track, r.ID)
 }
 
 // cleanup current + queued track files if unused

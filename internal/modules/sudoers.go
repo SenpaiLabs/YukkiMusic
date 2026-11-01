@@ -19,6 +19,7 @@ package modules
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -119,9 +120,10 @@ func handleAddSudo(m *telegram.NewMessage) error {
 
 	if config.SetCmds {
 		// Update commands for this sudo user
-		sudoCommands := append(
+		sudoCommands := slices.Concat(
 			AllCommands.PrivateUserCommands,
-			AllCommands.PrivateSudoCommands...)
+			AllCommands.PrivateSudoCommands,
+		)
 
 		if _, err := m.Client.BotsSetBotCommands(
 			&telegram.BotCommandScopePeer{
