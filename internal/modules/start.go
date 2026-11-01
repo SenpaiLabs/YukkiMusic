@@ -96,7 +96,7 @@ func sendStartResponse(m *tg.NewMessage, caption string) error {
 		sendOpt.Effect = effectID
 	}
 	if startImage := config.GetRandomStartImage(); startImage != "" {
-		sendOpt.Media = startImage
+		sendOpt.Media = resolveMedia(startImage)
 	}
 
 	_, err := m.Respond(caption, sendOpt)
@@ -114,7 +114,7 @@ func sendStartResponse(m *tg.NewMessage, caption string) error {
 	}
 
 	gologging.ErrorF("[start] image send failed: %v", err)
-	sendOpt.Media = ""
+	sendOpt.Media = nil
 	_, textErr := m.Respond(caption, sendOpt)
 	if textErr != nil {
 		gologging.ErrorF("[start] text send failed: %v", textErr)

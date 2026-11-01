@@ -99,7 +99,7 @@ func pingHandler(m *tg.NewMessage) error {
 		ReplyMarkup: core.SuppMarkup(m.ChannelID()),
 	}
 	if config.PingImage != "" {
-		opt.Media = config.PingImage
+		opt.Media = resolveMedia(config.PingImage)
 	}
 
 	v, err := mem.VirtualMemory()
@@ -135,7 +135,7 @@ func pingHandler(m *tg.NewMessage) error {
 		gologging.ErrorF("[ping] edit failed: %v", err)
 
 		if config.PingImage != "" {
-			opt.Media = ""
+			opt.Media = nil
 			_, err = reply.Edit(msg, opt)
 			if err != nil {
 				gologging.ErrorF("[ping] fallback text edit failed: %v", err)

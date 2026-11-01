@@ -18,9 +18,14 @@
 package modules
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"html"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -408,4 +413,50 @@ func leaveChat(client *tg.Client, chatID int64) {
 func getCommand(m *tg.NewMessage) string {
 	cmd, _, _ := strings.Cut(m.GetCommand(), "@")
 	return cmd
+}
+
+// resolveMedia downloads remote images locally to avoid WEBPAGE_CURL_FAILED from Telegram servers.
+func resolveMedia(media string) string {
+	if !strings.HasPrefix(media, "http://") && !strings.HasPrefix(media, "https://") {
+		return media
+	}
+	_ = os.MkdirAll("cache", 0o755)
+	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(media)))[:12]
+	dest := filepath.Join("cache", hash+".jpg")
+	if _, err := os.Stat(dest); err == nil {
+		return dest
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest("GET", media, nil)
+	if err != nil {
+		return media
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0")
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return media
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 15*1024*1024))
+	if err != nil || len(body) == 0 {
+		return media
+	}
+
+	if strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
+		content := string(body)
+		if idx := strings.Index(content, `property="og:image" content="`); idx != -1 {
+			start := idx + len(`property="og:image" content="`)
+			if end := strings.Index(content[start:], `"`); end != -1 {
+				return resolveMedia(content[start : start+end])
+			}
+		}
+		return media
+	}
+
+	if err := os.WriteFile(dest, body, 0o644); err == nil {
+		return dest
+	}
+	return media
 }
